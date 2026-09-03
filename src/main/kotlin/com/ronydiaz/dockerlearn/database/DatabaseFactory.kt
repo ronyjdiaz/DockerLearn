@@ -7,11 +7,16 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.io.File
 import java.net.URI
+import java.util.Properties
 
 object DatabaseFactory {
     fun init(databaseUrl: String? = null): Boolean {
-        val rawUrl = databaseUrl ?: System.getenv("DATABASE_URL")
+        val rawUrl = databaseUrl
+            ?: System.getenv("DATABASE_URL")
+            ?: getLocalProperty("DATABASE_URL")
+
         if (rawUrl.isNullOrBlank()) {
             println("⚠️ No se encontró DATABASE_URL. Usando repositorio en memoria...")
             return false
@@ -22,15 +27,25 @@ object DatabaseFactory {
             Database.connect(dataSource)
 
             transaction {
-                SchemaUtils.create(TasksTable)
+                SchemaUtils.create(TasksTable, CategoriesTable)
             }
-            println("✅ Conexión exitosa a PostgreSQL en Neon y tabla 'tasks' verificada!")
+            println("✅ Conexión exitosa a PostgreSQL en Neon y tablas 'tasks', 'categories' verificadas!")
             true
         } catch (e: Exception) {
             println("❌ Error conectando a PostgreSQL: ${e.message}")
             e.printStackTrace()
             false
         }
+    }
+
+    private fun getLocalProperty(key: String): String? {
+        val file = File("local.properties")
+        if (!file.exists()) return null
+        return runCatching {
+            val props = Properties()
+            file.inputStream().use { props.load(it) }
+            props.getProperty(key)
+        }.getOrNull()
     }
 
     private fun createHikariDataSource(rawUrl: String): HikariDataSource {
