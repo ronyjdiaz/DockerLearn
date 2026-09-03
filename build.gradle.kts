@@ -16,7 +16,10 @@ repositories {
     mavenCentral()
 }
 
+val exposedVersion = "0.57.0"
+
 dependencies {
+    // Ktor Server Core & Netty
     implementation("io.ktor:ktor-server-core-jvm:3.0.3")
     implementation("io.ktor:ktor-server-netty-jvm:3.0.3")
     implementation("io.ktor:ktor-server-content-negotiation-jvm:3.0.3")
@@ -25,9 +28,15 @@ dependencies {
     implementation("io.ktor:ktor-server-cors-jvm:3.0.3")
     implementation("ch.qos.logback:logback-classic:1.5.16")
 
+    // Database: PostgreSQL + Exposed (JetBrains ORM) + HikariCP
+    implementation("org.postgresql:postgresql:42.7.5")
+    implementation("com.zaxxer:HikariCP:5.1.0")
+    implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
+
     testImplementation("io.ktor:ktor-server-test-host-jvm:3.0.3")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:2.1.0")
-    implementation(kotlin("stdlib-jdk8"))
 }
 
 kotlin {

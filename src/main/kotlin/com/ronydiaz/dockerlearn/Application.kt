@@ -1,6 +1,8 @@
 package com.ronydiaz.dockerlearn
 
+import com.ronydiaz.dockerlearn.database.DatabaseFactory
 import com.ronydiaz.dockerlearn.repository.InMemoryTaskRepository
+import com.ronydiaz.dockerlearn.repository.PostgresTaskRepository
 import com.ronydiaz.dockerlearn.routes.taskRouting
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
@@ -17,11 +19,8 @@ import io.ktor.server.routing.routing
 import kotlinx.serialization.json.Json
 
 fun main() {
-    // Para Google Cloud Run y Docker:
-    // El puerto se lee de la variable de entorno PORT (Cloud Run asigna este puerto automáticamente).
-    // Si no está definida (en local), usamos 8080 por defecto.
     val port = System.getenv("PORT")?.toIntOrNull() ?: 8080
-    val host = "0.0.0.0" // Escuchar en 0.0.0.0 es indispensable para Docker y Cloud Run
+    val host = "0.0.0.0"
 
     println("🚀 Servidor Ktor iniciando en http://$host:$port ...")
 
@@ -30,16 +29,15 @@ fun main() {
 }
 
 fun Application.module() {
-    // Configuración de serialización JSON (idéntico a lo que usa Retrofit con kotlinx.serialization)
     install(ContentNegotiation) {
         json(Json {
             prettyPrint = true
             isLenient = true
             ignoreUnknownKeys = true
+            coerceInputValues = true
         })
     }
 
-    // Configuración de CORS para permitir peticiones desde cualquier origen (móvil, emulador o web)
     install(CORS) {
         anyHost()
         allowHeader(HttpHeaders.ContentType)
@@ -50,12 +48,20 @@ fun Application.module() {
         allowMethod(HttpMethod.Delete)
     }
 
-    val repository = InMemoryTaskRepository()
+    // Inicializar PostgreSQL en Neon si DATABASE_URL está configurada
+    val isDbConnected = DatabaseFactory.init()
+    val repository = if (isDbConnected) {
+        println("📦 Usando PostgresTaskRepository (Neon PostgreSQL)")
+        PostgresTaskRepository()
+    } else {
+        println("💾 Usando InMemoryTaskRepository (Memoria RAM)")
+        InMemoryTaskRepository()
+    }
 
-    // Definición de las rutas del backend
     routing {
         get("/") {
-            call.respondText("🚀 Backend Ktor funcionando correctamente para Rony Diaz!")
+            val dbStatus = if (isDbConnected) "PostgreSQL (Neon) 🐘" else "Memoria RAM 💾"
+            call.respondText("🚀 Backend Ktor funcionando para Rony Diaz! [Persistencia: $dbStatus]")
         }
 
         get("/health") {
