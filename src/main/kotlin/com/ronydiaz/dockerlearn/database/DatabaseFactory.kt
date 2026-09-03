@@ -28,6 +28,7 @@ object DatabaseFactory {
 
             transaction {
                 SchemaUtils.create(UsersTable, TasksTable, CategoriesTable)
+                exec("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS user_id VARCHAR(36);")
             }
             println("✅ Conexión exitosa a PostgreSQL en Neon y tablas 'users', 'tasks', 'categories' verificadas!")
             true
