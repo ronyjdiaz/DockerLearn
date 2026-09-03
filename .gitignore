@@ -1,0 +1,10 @@
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+
+### IntelliJ / Android Studio ###
+.idea
+*.iml
+out/
+.DS_Store
