@@ -3,8 +3,11 @@ package com.ronydiaz.dockerlearn
 import com.ronydiaz.dockerlearn.database.DatabaseFactory
 import com.ronydiaz.dockerlearn.repository.InMemoryCategoryRepository
 import com.ronydiaz.dockerlearn.repository.InMemoryTaskRepository
+import com.ronydiaz.dockerlearn.repository.InMemoryUserRepository
 import com.ronydiaz.dockerlearn.repository.PostgresCategoryRepository
 import com.ronydiaz.dockerlearn.repository.PostgresTaskRepository
+import com.ronydiaz.dockerlearn.repository.PostgresUserRepository
+import com.ronydiaz.dockerlearn.routes.authRouting
 import com.ronydiaz.dockerlearn.routes.categoryRouting
 import com.ronydiaz.dockerlearn.routes.taskRouting
 import io.ktor.http.HttpHeaders
@@ -53,6 +56,15 @@ fun Application.module() {
 
     // Inicializar PostgreSQL en Neon si DATABASE_URL está configurada (o en local.properties)
     val isDbConnected = DatabaseFactory.init()
+
+    val userRepository = if (isDbConnected) {
+        println("👤 Usando PostgresUserRepository (Neon PostgreSQL)")
+        PostgresUserRepository()
+    } else {
+        println("💾 Usando InMemoryUserRepository (Memoria RAM)")
+        InMemoryUserRepository()
+    }
+
     val taskRepository = if (isDbConnected) {
         println("📦 Usando PostgresTaskRepository (Neon PostgreSQL)")
         PostgresTaskRepository()
@@ -79,6 +91,7 @@ fun Application.module() {
             call.respondText("OK")
         }
 
+        authRouting(userRepository)
         taskRouting(taskRepository)
         categoryRouting(categoryRepository)
     }

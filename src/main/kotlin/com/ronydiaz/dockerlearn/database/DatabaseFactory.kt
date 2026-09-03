@@ -27,9 +27,9 @@ object DatabaseFactory {
             Database.connect(dataSource)
 
             transaction {
-                SchemaUtils.create(TasksTable, CategoriesTable)
+                SchemaUtils.create(UsersTable, TasksTable, CategoriesTable)
             }
-            println("✅ Conexión exitosa a PostgreSQL en Neon y tablas 'tasks', 'categories' verificadas!")
+            println("✅ Conexión exitosa a PostgreSQL en Neon y tablas 'users', 'tasks', 'categories' verificadas!")
             true
         } catch (e: Exception) {
             println("❌ Error conectando a PostgreSQL: ${e.message}")

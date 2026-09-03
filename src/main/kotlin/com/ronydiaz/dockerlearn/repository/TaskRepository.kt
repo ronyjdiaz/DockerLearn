@@ -7,49 +7,46 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 interface TaskRepository {
-    fun allTasks(): List<Task>
-    fun taskById(id: String): Task?
-    fun addTask(request: CreateTaskRequest): Task
-    fun deleteTask(id: String): Boolean
+    fun allTasks(userId: String? = null): List<Task>
+    fun taskById(id: String, userId: String? = null): Task?
+    fun addTask(request: CreateTaskRequest, userId: String? = null): Task
+    fun deleteTask(id: String, userId: String? = null): Boolean
 }
 
 class InMemoryTaskRepository : TaskRepository {
     private val tasks = ConcurrentHashMap<String, Task>()
 
-    init {
-        val sample1 = Task(
-            id = UUID.randomUUID().toString(),
-            title = "Aprender Docker y Backend",
-            description = "Construir API Ktor y desplegarla en Google Cloud",
-            priority = Priority.HIGH,
-            isCompleted = false
-        )
-        val sample2 = Task(
-            id = UUID.randomUUID().toString(),
-            title = "Conectar con Android",
-            description = "Consumir los endpoints desde la app en Android Studio",
-            priority = Priority.MEDIUM,
-            isCompleted = false
-        )
-        tasks[sample1.id] = sample1
-        tasks[sample2.id] = sample2
+    override fun allTasks(userId: String?): List<Task> {
+        return if (userId != null) {
+            tasks.values.filter { it.userId == userId || it.userId == null }
+        } else {
+            tasks.values.toList()
+        }
     }
 
-    override fun allTasks(): List<Task> = tasks.values.toList()
+    override fun taskById(id: String, userId: String?): Task? {
+        val task = tasks[id] ?: return null
+        if (userId != null && task.userId != null && task.userId != userId) return null
+        return task
+    }
 
-    override fun taskById(id: String): Task? = tasks[id]
-
-    override fun addTask(request: CreateTaskRequest): Task {
-        val newTask = Task(
-            id = UUID.randomUUID().toString(),
+    override fun addTask(request: CreateTaskRequest, userId: String?): Task {
+        val newId = UUID.randomUUID().toString()
+        val task = Task(
+            id = newId,
+            userId = userId,
             title = request.title,
             description = request.description,
             priority = request.priority,
             isCompleted = false
         )
-        tasks[newTask.id] = newTask
-        return newTask
+        tasks[newId] = task
+        return task
     }
 
-    override fun deleteTask(id: String): Boolean = tasks.remove(id) != null
+    override fun deleteTask(id: String, userId: String?): Boolean {
+        val task = tasks[id] ?: return false
+        if (userId != null && task.userId != null && task.userId != userId) return false
+        return tasks.remove(id) != null
+    }
 }
