@@ -2,7 +2,10 @@ package com.ronydiaz.dockerlearn.routes
 
 import com.ronydiaz.dockerlearn.models.CreateTaskRequest
 import com.ronydiaz.dockerlearn.repository.TaskRepository
+import com.ronydiaz.dockerlearn.security.JwtService
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.request.header
 import io.ktor.server.request.receiveText
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
@@ -19,18 +22,34 @@ private val jsonParser = Json {
     coerceInputValues = true
 }
 
+fun ApplicationCall.extractUserId(): String? {
+    val kongUserId = request.header("X-Consumer-Custom-ID") ?: request.header("X-Consumer-Username")
+    if (!kongUserId.isNullOrBlank()) return kongUserId
+
+    val authHeader = request.header("Authorization")
+    if (!authHeader.isNullOrBlank() && authHeader.startsWith("Bearer ")) {
+        val token = authHeader.removePrefix("Bearer ").trim()
+        val decoded = JwtService.verifyToken(token)
+        return decoded?.subject
+    }
+
+    return null
+}
+
 fun Route.taskRouting(repository: TaskRepository) {
     route("/tasks") {
         get {
-            call.respond(repository.allTasks())
+            val userId = call.extractUserId()
+            call.respond(repository.allTasks(userId))
         }
 
         get("{id}") {
+            val userId = call.extractUserId()
             val id = call.parameters["id"] ?: return@get call.respondText(
                 "Falta el parámetro ID",
                 status = HttpStatusCode.BadRequest
             )
-            val task = repository.taskById(id) ?: return@get call.respondText(
+            val task = repository.taskById(id, userId) ?: return@get call.respondText(
                 "Tarea no encontrada",
                 status = HttpStatusCode.NotFound
             )
@@ -39,9 +58,10 @@ fun Route.taskRouting(repository: TaskRepository) {
 
         post {
             try {
+                val userId = call.extractUserId()
                 val bodyText = call.receiveText()
                 val request = jsonParser.decodeFromString<CreateTaskRequest>(bodyText)
-                val createdTask = repository.addTask(request)
+                val createdTask = repository.addTask(request, userId)
                 call.respond(HttpStatusCode.Created, createdTask)
             } catch (e: Exception) {
                 call.respondText(
@@ -52,11 +72,12 @@ fun Route.taskRouting(repository: TaskRepository) {
         }
 
         delete("{id}") {
+            val userId = call.extractUserId()
             val id = call.parameters["id"] ?: return@delete call.respondText(
                 "Falta el parámetro ID",
                 status = HttpStatusCode.BadRequest
             )
-            if (repository.deleteTask(id)) {
+            if (repository.deleteTask(id, userId)) {
                 call.respond(HttpStatusCode.NoContent)
             } else {
                 call.respondText(

@@ -4,12 +4,15 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 enum class Priority {
-    LOW, MEDIUM, HIGH
+    LOW,
+    MEDIUM,
+    HIGH
 }
 
 @Serializable
 data class Task(
     val id: String,
+    val userId: String? = null,
     val title: String,
     val description: String = "",
     val priority: Priority = Priority.MEDIUM,
