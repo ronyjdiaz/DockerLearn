@@ -40,11 +40,23 @@ fun Route.taskRouting(repository: TaskRepository) {
     route("/tasks") {
         get {
             val userId = call.extractUserId()
+            if (userId == null) {
+                return@get call.respondText(
+                    "🚨 401 No autorizado: Debes enviar un Token JWT válido en el header Authorization: Bearer <token>",
+                    status = HttpStatusCode.Unauthorized
+                )
+            }
             call.respond(repository.allTasks(userId))
         }
 
         get("{id}") {
             val userId = call.extractUserId()
+            if (userId == null) {
+                return@get call.respondText(
+                    "🚨 401 No autorizado: Debes enviar un Token JWT válido en el header Authorization: Bearer <token>",
+                    status = HttpStatusCode.Unauthorized
+                )
+            }
             val id = call.parameters["id"] ?: return@get call.respondText(
                 "Falta el parámetro ID",
                 status = HttpStatusCode.BadRequest
@@ -59,6 +71,12 @@ fun Route.taskRouting(repository: TaskRepository) {
         post {
             try {
                 val userId = call.extractUserId()
+                if (userId == null) {
+                    return@post call.respondText(
+                        "🚨 401 No autorizado: Debes enviar un Token JWT válido en el header Authorization: Bearer <token>",
+                        status = HttpStatusCode.Unauthorized
+                    )
+                }
                 val bodyText = call.receiveText()
                 val request = jsonParser.decodeFromString<CreateTaskRequest>(bodyText)
                 val createdTask = repository.addTask(request, userId)
@@ -73,6 +91,12 @@ fun Route.taskRouting(repository: TaskRepository) {
 
         delete("{id}") {
             val userId = call.extractUserId()
+            if (userId == null) {
+                return@delete call.respondText(
+                    "🚨 401 No autorizado: Debes enviar un Token JWT válido en el header Authorization: Bearer <token>",
+                    status = HttpStatusCode.Unauthorized
+                )
+            }
             val id = call.parameters["id"] ?: return@delete call.respondText(
                 "Falta el parámetro ID",
                 status = HttpStatusCode.BadRequest
