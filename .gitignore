@@ -3,6 +3,10 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !gradle/wrapper/gradle-wrapper.properties
 
+### Secrets & Local configs ###
+local.properties
+.env
+
 ### IntelliJ / Android Studio ###
 .idea
 *.iml
