@@ -80,6 +80,10 @@ fun Route.taskRouting(repository: TaskRepository) {
                 val bodyText = call.receiveText()
                 val request = jsonParser.decodeFromString<CreateTaskRequest>(bodyText)
                 val createdTask = repository.addTask(request, userId)
+
+                // Transmisión en tiempo real vía WebSocket a todos los clientes conectados
+                com.ronydiaz.dockerlearn.websockets.TaskNotificationService.broadcastTaskCreated(createdTask)
+
                 call.respond(HttpStatusCode.Created, createdTask)
             } catch (e: Exception) {
                 call.respondText(
