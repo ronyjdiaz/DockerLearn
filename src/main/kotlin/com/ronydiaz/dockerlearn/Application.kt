@@ -9,6 +9,7 @@ import com.ronydiaz.dockerlearn.repository.PostgresTaskRepository
 import com.ronydiaz.dockerlearn.repository.PostgresUserRepository
 import com.ronydiaz.dockerlearn.routes.authRouting
 import com.ronydiaz.dockerlearn.routes.categoryRouting
+import com.ronydiaz.dockerlearn.routes.chatRouting
 import com.ronydiaz.dockerlearn.routes.taskRouting
 import com.ronydiaz.dockerlearn.routes.webSocketRouting
 import io.ktor.http.HttpHeaders
@@ -94,6 +95,14 @@ fun Application.module() {
         InMemoryCategoryRepository()
     }
 
+    val messageRepository = if (isDbConnected) {
+        println("💬 Usando PostgresMessageRepository (Neon PostgreSQL)")
+        com.ronydiaz.dockerlearn.repository.PostgresMessageRepository()
+    } else {
+        println("💾 Usando InMemoryMessageRepository (Memoria RAM)")
+        com.ronydiaz.dockerlearn.repository.InMemoryMessageRepository()
+    }
+
     routing {
         get("/") {
             val dbStatus = if (isDbConnected) "PostgreSQL (Neon) 🐘" else "Memoria RAM 💾"
@@ -108,5 +117,6 @@ fun Application.module() {
         taskRouting(taskRepository)
         categoryRouting(categoryRepository)
         webSocketRouting()
+        chatRouting(messageRepository, userRepository)
     }
 }
