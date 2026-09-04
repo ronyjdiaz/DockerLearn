@@ -18,6 +18,7 @@ data class UserRecord(
 interface UserRepository {
     fun findByEmail(email: String): UserRecord?
     fun findById(id: String): User?
+    fun allUsers(): List<User>
     fun createUser(request: RegisterRequest, passwordHash: String): User
 }
 
@@ -53,6 +54,17 @@ class PostgresUserRepository : UserRepository {
             .singleOrNull()
     }
 
+    override fun allUsers(): List<User> = transaction {
+        UsersTable.selectAll().map { row ->
+            User(
+                id = row[UsersTable.id],
+                email = row[UsersTable.email],
+                name = row[UsersTable.name],
+                role = row[UsersTable.role]
+            )
+        }
+    }
+
     override fun createUser(request: RegisterRequest, passwordHash: String): User {
         val newId = UUID.randomUUID().toString()
         val cleanEmail = request.email.trim().lowercase()
@@ -84,6 +96,9 @@ class InMemoryUserRepository : UserRepository {
 
     override fun findById(id: String): User? =
         records[id]?.user
+
+    override fun allUsers(): List<User> =
+        records.values.map { it.user }
 
     override fun createUser(request: RegisterRequest, passwordHash: String): User {
         val newId = UUID.randomUUID().toString()

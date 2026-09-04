@@ -27,10 +27,10 @@ object DatabaseFactory {
             Database.connect(dataSource)
 
             transaction {
-                SchemaUtils.create(UsersTable, TasksTable, CategoriesTable)
+                SchemaUtils.create(UsersTable, TasksTable, CategoriesTable, MessagesTable)
                 exec("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS user_id VARCHAR(36);")
             }
-            println("✅ Conexión exitosa a PostgreSQL en Neon y tablas 'users', 'tasks', 'categories' verificadas!")
+            println("✅ Conexión exitosa a PostgreSQL en Neon y tablas verificadas ('users', 'tasks', 'categories', 'messages')!")
             true
         } catch (e: Exception) {
             println("❌ Error conectando a PostgreSQL: ${e.message}")
